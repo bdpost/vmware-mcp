@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  vsphere-mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vsphere-mcp-server
+    
+    # Expose port for HTTP server
+    ports:
+      - "8000:8000"
+    
+    # Load ALL variables from .env file (including host, user, password)
+    env_file:
+      - .env
+      
+    # Additional environment variables (optional if using env_file, but useful for debug)
+    environment:
+      # vCenter variables
+      - VCENTER_HOST=${VCENTER_HOST}
+      - VCENTER_USER=${VCENTER_USER}
+      - VCENTER_PASSWORD=${VCENTER_PASSWORD}
+      # Other configurations
+      - INSECURE=${INSECURE}
+      # Server configuration
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8000
+
+    # Restart container in case of error
+    restart: unless-stopped
+    
+    # Network connections
+    networks:
+      - vsphere-mcp-network
+      - backend
+
+networks:
+  vsphere-mcp-network:
+    driver: bridge
+  backend:
+    external: true
+    name: llm-rag-mcp_backend
