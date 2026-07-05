@@ -61,7 +61,8 @@ Create a `.env` file with the following variables:
 
 ```env
 # vCenter Connection
-VCENTER_HOST=vcenter.domain.local
+# One or more vCenter hosts, comma-separated (first = primary/default).
+VCENTER_HOSTS=vcenter-a.domain.local,vcenter-b.domain.local
 VCENTER_USER=username@domain.local
 VCENTER_PASSWORD=your_password_here
 INSECURE=True
@@ -70,6 +71,22 @@ INSECURE=True
 SERVER_HOST=0.0.0.0
 SERVER_PORT=8000
 ```
+
+### Multi-vCenter support
+
+List every vCenter in `VCENTER_HOSTS` (comma-separated). All hosts share the same
+`VCENTER_USER` / `VCENTER_PASSWORD`, so a single credential pair covers them all.
+
+- **Inventory/list tools** (`list_vms`, `list_hosts`, `list_datastores`, …) query
+  **every** configured vCenter and label results per host when more than one is set.
+  Queries run in parallel and one vCenter being unreachable does not fail the others.
+- **VM-targeted tools** (`get_vm_details`, `power_on_vm`, snapshots, deletes, …)
+  **auto-locate** the VM by id or name across all vCenters — you don't need to know
+  which one it lives on.
+- Pass an explicit `hostname` to any tool to restrict it to a single vCenter.
+- `VCENTER_HOST` (singular) is still honored as a fallback when `VCENTER_HOSTS` is unset.
+
+Use the `list_vcenters` tool to see which vCenters are configured.
 
 ### AnythingLLM Integration
 
@@ -91,6 +108,15 @@ Add the following configuration to your `anythingllm_mcp_servers.json`:
 
 ## Available Tools
 
+> In all tools, `hostname` is optional. When omitted, inventory tools query **all**
+> configured vCenters and VM-targeted tools **auto-locate** the VM across them.
+> Provide `hostname` to target a single vCenter.
+
+### Discovery
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `list_vcenters` | List the configured vCenter servers | _(none)_ |
+
 ### VM Management
 | Tool | Description | Parameters |
 |------|-------------|------------|
@@ -98,7 +124,6 @@ Add the following configuration to your `anythingllm_mcp_servers.json`:
 | `get_vm_details` | Get detailed VM information | `vm_id`, `hostname` (optional) |
 | `power_on_vm` | Power on a virtual machine | `vm_id`, `hostname` (optional) |
 | `power_off_vm` | Power off a virtual machine | `vm_id`, `hostname` (optional) |
-| `restart_vm` | Restart a virtual machine | `vm_id`, `hostname` (optional) |
 
 ### Infrastructure Management
 | Tool | Description | Parameters |

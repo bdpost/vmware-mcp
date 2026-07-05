@@ -1,7 +1,7 @@
 """Credential management for vSphere MCP server - Docker/Environment version."""
 
 import os
-from typing import Tuple, Optional, NamedTuple
+from typing import List, Tuple, Optional, NamedTuple
 
 
 class VCenterCredentials(NamedTuple):
@@ -20,6 +20,30 @@ def extract_domain(hostname: str) -> str:
     return hostname
 
 
+def get_vcenter_hosts() -> List[str]:
+    """Return the list of configured vCenter hostnames.
+
+    Reads ``VCENTER_HOSTS`` (comma-separated, first entry is the primary/default).
+    Falls back to the single-host ``VCENTER_HOST`` for backward compatibility.
+    Returns an empty list if neither is set.
+
+    Credentials (``VCENTER_USER`` / ``VCENTER_PASSWORD``) are shared across all
+    listed hosts, so multiple vCenters that use the same login need only be
+    added here.
+    """
+    hosts_raw = os.environ.get('VCENTER_HOSTS')
+    if hosts_raw:
+        hosts = [h.strip() for h in hosts_raw.split(',') if h.strip()]
+        if hosts:
+            return hosts
+
+    single = os.environ.get('VCENTER_HOST')
+    if single and single.strip():
+        return [single.strip()]
+
+    return []
+
+
 def get_credentials(hostname: str) -> Tuple[str, str]:
     """Get credentials for vSphere host from environment variables."""
     # Try to get credentials from environment variables first
@@ -34,22 +58,30 @@ def get_credentials(hostname: str) -> Tuple[str, str]:
 def get_vcenter_credentials(hostname: str) -> Optional[VCenterCredentials]:
     """
     Recupera le credenziali vCenter dalle variabili d'ambiente.
+
+    Username/password/INSECURE are shared across all configured vCenters, so the
+    returned credentials are bound to whichever ``hostname`` is asked for rather
+    than to a single ``VCENTER_HOST``. This is what lets the same login target
+    more than one vCenter (see :func:`get_vcenter_hosts`).
     """
-    # Read environment variables defined in the .env file
-    host = os.environ.get('VCENTER_HOST')
     user = os.environ.get('VCENTER_USER')
     password = os.environ.get('VCENTER_PASSWORD')
     # Read the INSECURE variable and convert it to boolean
     insecure = os.environ.get('INSECURE', 'False').lower() in ('true', '1', 't')
 
-    if host and user and password:
+    # Fall back to the first configured host if the caller didn't specify one.
+    if not hostname:
+        hosts = get_vcenter_hosts()
+        hostname = hosts[0] if hosts else None
+
+    if hostname and user and password:
         return VCenterCredentials(
-            hostname=host,
+            hostname=hostname,
             username=user,
             password=password,
             insecure=insecure
         )
-    
+
     return None
 
 

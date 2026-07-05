@@ -17,7 +17,9 @@ services:
       
     # Additional environment variables (optional if using env_file, but useful for debug)
     environment:
-      # vCenter variables
+      # vCenter variables — VCENTER_HOSTS is comma-separated (first = primary);
+      # VCENTER_HOST is the single-host legacy fallback.
+      - VCENTER_HOSTS=${VCENTER_HOSTS}
       - VCENTER_HOST=${VCENTER_HOST}
       - VCENTER_USER=${VCENTER_USER}
       - VCENTER_PASSWORD=${VCENTER_PASSWORD}

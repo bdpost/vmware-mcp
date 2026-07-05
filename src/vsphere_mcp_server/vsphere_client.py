@@ -26,7 +26,9 @@ class VSphereClient:
             if env_creds:
                 verify_ssl = not env_creds.insecure
             else:
-                verify_ssl = os.environ.get('INSECURE', 'True').lower() in ('true', '1', 't')
+                # No credentials resolved — fall back to the raw INSECURE flag,
+                # matching the default used in credentials.get_vcenter_credentials.
+                verify_ssl = os.environ.get('INSECURE', 'False').lower() not in ('true', '1', 't')
         
         if not verify_ssl:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
