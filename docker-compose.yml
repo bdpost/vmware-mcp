@@ -35,11 +35,7 @@ services:
     # Network connections
     networks:
       - vsphere-mcp-network
-      - backend
-
+      
 networks:
   vsphere-mcp-network:
     driver: bridge
-  backend:
-    external: true
-    name: llm-rag-mcp_backend
