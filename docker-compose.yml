@@ -9,7 +9,7 @@ services:
     
     # Expose port for HTTP server
     ports:
-      - "8000:8000"
+      - "8102:8000"
     
     # Load ALL variables from .env file (including host, user, password)
     env_file:
